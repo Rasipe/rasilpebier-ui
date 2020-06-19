@@ -1,11 +1,14 @@
 <template>
-<div ref="knob" class="knob">
+<div ref="knob" class="knob" :style="{height: size, width: size}">
+  <div class="knob-html">
+    <p :style="{height: getSize(6), width: getSize(2), 'font-size': getSize(7)}">{{ label }}</p>
+    <input type="number" :value="value" :style="{height: getSize(6), width: getSize(2), 'font-size': getSize(9)}" @input="inputHandler">
+  </div>
   <svg
     focusable="false"
     viewBox="55.55555555555556 55.55555555555556 111.11111111111111 111.11111111111111"
     class="knob"
     style="transform: rotate3d(0, 0, 1, -90deg);"
-    @click="someMethod"
   >
     <circle
       class="value"
@@ -36,55 +39,50 @@ export default {
   name: "Knob",
   props: {
     value: [String, Number],
-    max: [String, Number]
+    max: [String, Number],
+    size: String,
+    label: String
   },
   computed: {
     dashoffset() {
-      return -314.1592653589793 / (this.max / this.value);
+      let value = parseInt(this.value) > parseInt(this.max)? this.max: this.value
+      return  -314.1592653589793 / (this.max / value)
+    },
+    getSize() {
+      return value => {
+        let number = this.size.toLowerCase().replace(/[a-z]*/gi, '')
+        return parseInt(number) / value + this.size.toLowerCase().replace(/\d*/, '')
+      }
     }
   },
   methods: {
+    inputHandler(event) {
+      let value = event.target.value
+      this.$emit('input', value)
+    },
     someMethod(event) {
       let bodyRect = document.body.getBoundingClientRect(),
       elemRect = event.target.getBoundingClientRect()
 
-      let posX = event.clientX - elemRect.left - bodyRect.left
-      let posY = event.clientY - elemRect.top - bodyRect.top
+      let posX = event.pageX - elemRect.left - bodyRect.left
+      let posY = event.pageY - elemRect.top - bodyRect.top
 
       let centerY = this.$refs.knob.offsetHeight / 2
       let centerX = this.$refs.knob.offsetWidth / 2
-      //let angleDeg = Math.atan2(posY - this.$refs.knob.offsetHeight / 2 , posX - this.$refs.knob.offsetWidth / 2 ) * 180 / Math.PI;
       
-      /*var deltaX = centerX - posX;
-      var deltaY = centerY - posY;
-      var rad = Math.atan2(deltaY, deltaX); // In radians
-      var angleDeg = rad * (180 / Math.PI)*/
-      let side1 = centerY
-      let side2 = Math.sqrt( Math.pow((centerX-posX), 2) + Math.pow((centerY - posY), 2) );
-      let side3 = Math.sqrt( Math.pow((centerX-posX), 2) + Math.pow(posY, 2) );
+      let maxAngle = 360
+      let halfAngle = maxAngle / 2
 
-      let cos = (Math.pow(side1, 2) + Math.pow(side2, 2) - Math.pow(side3, 2)) / (2 * side1 * side2)
-      let angle = Math.acos(cos) * (180 / Math.PI)
-      let angleDeg = posX < centerY? angle*2: angle
+      let deltaY = centerY - posY;
+      let deltaX = centerX - posX;
+      let rad = Math.atan2(deltaY, deltaX) - 0.45*Math.PI
+      let angle = Math.round(rad * halfAngle / Math.PI);
 
-      let value = angleDeg * (this.max / 360)
-      console.log('angulo: '+angleDeg);
-      console.log('valor: '+value);
+      let angleDeg = angle < 0? angle + 360: angle
+
+      let value = angleDeg * (this.max / maxAngle)
       
-      this.$emit('input', value)
-      /*
-      console.log(event.clientX); // x coordinate
-      console.log(event.clientY); // y coordinate
-
-      // pageX/Y gives the coordinates relative to the <html> element in CSS pixels.
-      console.log(event.pageX);
-      console.log(event.pagey);
-
-      // screenX/Y gives the coordinates relative to the screen in device pixels.
-      console.log(event.screenX);
-      console.log(event.screenY);
-      */
-      
+      this.$emit('input', value)      
     }
   }
 };
@@ -94,10 +92,21 @@ export default {
 @import '@/assets/style/colors.sass'
 
 .knob
-  width: 200px
-  height: 200px
+ position: relative 
 .empty
   stroke: grey
 .value
   stroke: $primary
+.knob-html
+  z-index: 10
+  position: absolute
+  bottom: 40%
+  left: 25%
+  & > input
+    text-align: center
+    border: 0px
+    background-color: transparent
+  & > p
+    margin: 0px
+  
 </style>
